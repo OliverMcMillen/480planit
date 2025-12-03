@@ -11,8 +11,8 @@ import re
 import os
 
 # Load Excel files
-trip_df = pd.read_excel("../data/trip_scenarios_1000_activity_STRICT.xlsx")
-catalog_df = pd.read_excel("../data/ItemCatalog_clean.xlsx")
+trip_df = pd.read_excel("../data/trip_scenarios_1000_Dec3rd.xlsx")
+catalog_df = pd.read_excel("../data/ItemCatalog_Dec3rd.xlsx")
 
 # Standardize column names early so later code can rely on them
 trip_df.columns = trip_df.columns.str.strip().str.lower()

@@ -33,7 +33,7 @@ categorical_cols = saved["categorical_cols"]
 numeric_cols = saved["numeric_cols"]
 
 # we also want names for output
-catalog_df = pd.read_excel("../data/ItemCatalog_clean.xlsx")
+catalog_df = pd.read_excel("../data/ItemCatalog_Dec3rd.xlsx")
 catalog_df.columns = catalog_df.columns.str.strip().str.lower()
 id_to_name = {int(r["id"]): r["name"] for _, r in catalog_df.iterrows()}
 
@@ -129,15 +129,15 @@ def predict_items(user_trip: dict, threshold: float = 0.65, fallback_topk: int =
 
 if __name__ == "__main__":
     example_trip = {
-        "destination": "New York City, NY",
+        "destination": "Grand Canyon, AZ",
         "season": "summer",
         "weather": "hot",
-        "activities": "Hiking, Adventure, Camping & Beach, Cruise",   # must be a single value like in training
-        "duration_days": 12,
+        "activities": "campground, hiking_area, national_park, historical_landmark, monument",   # must be a single value like in training
+        "duration_days": 6,
         "avg_temp_high": 85,
         "avg_temp_low": 75,
-        "rain_chance_percent": 90,
-        "humidity_percent": 86,
+        "rain_chance_percent": 10,
+        "humidity_percent": 16,
     }
 
     results = predict_items(example_trip, threshold=0.65, fallback_topk=5)
