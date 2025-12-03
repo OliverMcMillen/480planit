@@ -19,7 +19,7 @@ class TripItemMLP(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-MODELS_DIR = "../models"
+MODELS_DIR = "models"
 PREPROC_PATH = os.path.join(MODELS_DIR, "preprocessors.pkl")
 MODEL_PATH = os.path.join(MODELS_DIR, "trained_trip_item_mlp.pth")
 
@@ -33,7 +33,7 @@ categorical_cols = saved["categorical_cols"]
 numeric_cols = saved["numeric_cols"]
 
 # we also want names for output
-catalog_df = pd.read_excel("../data/ItemCatalog_Dec3rd.xlsx")
+catalog_df = pd.read_excel("data/ItemCatalog_Dec3rd.xlsx")
 catalog_df.columns = catalog_df.columns.str.strip().str.lower()
 id_to_name = {int(r["id"]): r["name"] for _, r in catalog_df.iterrows()}
 
