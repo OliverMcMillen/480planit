@@ -10,45 +10,13 @@ import pickle
 import re
 import os
 
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+DATA_DIR = os.path.join(BASE_DIR, "..", "data")
+MODELS_DIR = os.path.join(BASE_DIR, "..", "models")
+
 # Load Excel files
-trip_df = pd.read_excel("../data/trip_scenarios_1000_Dec3rd.xlsx")
-catalog_df = pd.read_excel("../data/ItemCatalog_Dec3rd.xlsx")
-
-# Standardize column names early so later code can rely on them
-trip_df.columns = trip_df.columns.str.strip().str.lower()
-catalog_df.columns = catalog_df.columns.str.strip().str.lower()
-
-# The trip dataset stores item names (text) separated by '|' — map those names to catalog ids.
-def normalize_name(s: str) -> str:
-    s = str(s).lower()
-    # replace slashes with space, remove parentheses and punctuation except alphanumeric and spaces
-    s = s.replace('/', ' ')
-    s = re.sub(r"[^a-z0-9 ]+", ' ', s)
-    s = re.sub(r"\s+", ' ', s).strip()
-    return s
-
-# build mapping from normalized catalog name -> list of ids (handle duplicate names)
-catalog_df['name_norm'] = catalog_df['name'].apply(normalize_name)
-name_to_ids = catalog_df.groupby('name_norm')['id'].apply(list).to_dict()
-
-def map_item_names_to_ids(cell):
-    # split by '|' (dataset uses |) and map each token to one or more ids
-    parts = [p.strip() for p in str(cell).split('|') if p.strip()]
-    ids = []
-    for p in parts:
-        norm = normalize_name(p)
-        if norm in name_to_ids:
-            ids.extend([int(i) for i in name_to_ids[norm]])
-        else:
-            # not found in catalog; ignore or log — here we ignore
-            pass
-    # deduplicate
-    return sorted(set(ids))
-
-trip_df["items"] = trip_df["items"].apply(map_item_names_to_ids)
-
-# Define feature columns
-categorical_cols = ["destination", "season", "weather"]
+trip_df = pd.read_excel(os.path.join(DATA_DIR, "trip_scenarios_1000_Dec3rd.xlsx"))
+catalog_df = pd.read_excel(os.path.join(DATA_DIR, "ItemCatalog_Dec3rd.xlsx"))
 
 activity_map = {
     "hiking_area": "outdoor_hiking",
@@ -88,9 +56,50 @@ trip_df["activities_parsed"] = trip_df["activities"].apply(parse_and_canonicaliz
 all_activities = sorted({a for acts in trip_df["activities_parsed"] for a in acts})
 activity_cols = [f"act__{a}" for a in all_activities]
 
+print("Using activity columns:", activity_cols)
+
+
+print(activity_cols)
+
 for a in all_activities:
     col = f"act__{a}"
     trip_df[col] = trip_df["activities_parsed"].apply(lambda acts: 1.0 if a in acts else 0.0)
+
+# Standardize column names early so later code can rely on them
+trip_df.columns = trip_df.columns.str.strip().str.lower()
+catalog_df.columns = catalog_df.columns.str.strip().str.lower()
+
+# The trip dataset stores item names (text) separated by '|' — map those names to catalog ids.
+def normalize_name(s: str) -> str:
+    s = str(s).lower()
+    # replace slashes with space, remove parentheses and punctuation except alphanumeric and spaces
+    s = s.replace('/', ' ')
+    s = re.sub(r"[^a-z0-9 ]+", ' ', s)
+    s = re.sub(r"\s+", ' ', s).strip()
+    return s
+
+# build mapping from normalized catalog name -> list of ids (handle duplicate names)
+catalog_df['name_norm'] = catalog_df['name'].apply(normalize_name)
+name_to_ids = catalog_df.groupby('name_norm')['id'].apply(list).to_dict()
+
+def map_item_names_to_ids(cell):
+    # split by '|' (dataset uses |) and map each token to one or more ids
+    parts = [p.strip() for p in str(cell).split('|') if p.strip()]
+    ids = []
+    for p in parts:
+        norm = normalize_name(p)
+        if norm in name_to_ids:
+            ids.extend([int(i) for i in name_to_ids[norm]])
+        else:
+            # not found in catalog; ignore or log — here we ignore
+            pass
+    # deduplicate
+    return sorted(set(ids))
+
+trip_df["items"] = trip_df["items"].apply(map_item_names_to_ids)
+
+# Define feature columns
+categorical_cols = ["destination", "season", "weather"]
 
 # Only use columns that exist
 categorical_cols = [c for c in categorical_cols if c in trip_df.columns]
@@ -269,23 +278,33 @@ try:
 except Exception:
     pass
 
-# ensure models dir exists and save CSV
-os.makedirs("../models", exist_ok=True)
-csv_path = "../models/predictions1000_STRICT.csv"
+os.makedirs(MODELS_DIR, exist_ok=True)
+csv_path = os.path.join(MODELS_DIR, "predictions1000_STRICT.csv")
 results_df.to_csv(csv_path, index=False)
 print(f"\nSaved prediction results to: {csv_path}")
 
-# Save model + preprocessors-
-torch.save(model.state_dict(), "../models/trained_trip_item_mlp.pth")
+MODEL_PATH = os.path.join(MODELS_DIR, "trained_trip_item_mlp.pth")
+PREPROC_PATH = os.path.join(MODELS_DIR, "preprocessors_activities.pkl")
 
-with open("../models/preprocessors.pkl", "wb") as f:
+torch.save(model.state_dict(), MODEL_PATH)
+
+print("TRAIN: writing preprocessors to:", os.path.abspath(PREPROC_PATH))
+print("TRAIN: categorical_cols:", categorical_cols)
+print("TRAIN: saving keys:",
+      ["encoder", "scaler", "mlb", "categorical_cols",
+       "numeric_cols", "activity_cols", "activity_map", "all_activities"])
+
+with open(PREPROC_PATH, "wb") as f:
     pickle.dump({
         "encoder": encoder,
         "scaler": scaler,
+        "activity_cols": activity_cols,
+        "activity_map": activity_map,
+        "all_activities": all_activities,
         "mlb": mlb,
         "categorical_cols": categorical_cols,
-        "numeric_cols": numeric_cols
+        "numeric_cols": numeric_cols,
+
     }, f)
 
 print("\nModel and preprocessors saved successfully!")
-
