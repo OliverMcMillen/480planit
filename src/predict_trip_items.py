@@ -19,7 +19,7 @@ class TripItemMLP(nn.Module):
     def forward(self, x):
         return self.net(x)
 
-MODELS_DIR = "models"
+MODELS_DIR = "../models"
 PREPROC_PATH = os.path.join(MODELS_DIR, "preprocessors.pkl")
 MODEL_PATH = os.path.join(MODELS_DIR, "trained_trip_item_mlp.pth")
 
@@ -128,7 +128,7 @@ def predict_items(user_trip: dict, threshold: float = 0.65, fallback_topk: int =
     return scored
 
 if __name__ == "__main__":
-    example_trip = {
+    example_trip1 = {
         "destination": "Grand Canyon, AZ",
         "season": "summer",
         "weather": "hot",
@@ -140,7 +140,41 @@ if __name__ == "__main__":
         "humidity_percent": 16,
     }
 
-    results = predict_items(example_trip, threshold=0.65, fallback_topk=5)
+    example_trip2 = {
+        "destination": "Honolulu, HI",
+        "season": "fall",
+        "activities": "hiking_area,park,beach",
+        "duration_days": 8,
+        "avg_temp_high": 76,
+        "avg_temp_low": 76,
+        "avg_precipitation_chance": 73,
+        "humidity_percent": 51,
+    }
+
+    example_trip3 = {
+        "destination": "Ocean City, MD",
+        "season": "summer",
+        # "activities": "public_bathroom,beach,museum,,restaurant,american_restaurant,mediterranean_restaurant,nail_salon,tourist_attraction,seafood_restaurant,water_park,pub,bar_and_grill,stable,hospital,movie_theater,video_arcade,shopping_mall,gym,amusement_park,coffee_shop,spa,health",
+        "activities": "beach,museum,tourist_attraction,amusement_park",
+        "duration_days": 7,
+        "avg_temp_high": 75,
+        "avg_temp_low": 75,
+        "avg_precipitation_chance": 13,
+        "humidity_percent": 83,
+    }
+
+    example_trip4 = {
+        "destination": "Breckenridge, CO",
+        "season": "winter",
+        "activities": "ski_resort",
+        "duration_days": 4,
+        "avg_temp_high": 28,
+        "avg_temp_low": 14,
+        "avg_precipitation_chance": 50,
+        "humidity_percent": 83,
+    }
+
+    results = predict_items(example_trip4, threshold=0.25, fallback_topk=5)
     print("Predicted items to pack:")
     for r in results:
         print(f"- {r['item_name']} ({r['prob']:.3f})")

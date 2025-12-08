@@ -16,7 +16,7 @@ def predict():
         data = request.get_json()
         if not data:
             return jsonify({"error": "Missing JSON body"}), 400
-        results = predict_items(data, threshold=0.65, fallback_topk=5)
+        results = predict_items(data, threshold=0.25, fallback_topk=5)
         return jsonify({
             "status": "success",
             "predicted_items": results

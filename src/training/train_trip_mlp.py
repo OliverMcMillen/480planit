@@ -48,7 +48,49 @@ def map_item_names_to_ids(cell):
 trip_df["items"] = trip_df["items"].apply(map_item_names_to_ids)
 
 # Define feature columns
-categorical_cols = ["destination", "season", "weather", "activities"]
+categorical_cols = ["destination", "season", "weather"]
+
+activity_map = {
+    "hiking_area": "outdoor_hiking",
+    "national_park": "outdoor_hiking",
+    "campground": "outdoor_hiking",
+    "state_park": "outdoor_hiking",
+    "park": "outdoor_hiking",
+
+    "beach": "beach_water",
+    "water_park": "beach_water",
+
+    "marina": "fish_charter",
+
+    "ski_resort": "skiing",
+
+    "museum": "sightseeing",
+    "art_gallery": "sightseeing",
+    "historical_landmark": "sightseeing",
+    "observation_deck": "sightseeing",
+
+}
+
+def parse_and_canonicalize_activities(s: str):
+    if pd.isna(s):
+        return set()
+    raw = [a.strip() for a in str(s).split(',') if a.strip()]
+    canon = set()
+    for a in raw:
+        if a in activity_map:
+            canon.add(activity_map[a])
+        else:
+            canon.add(a)  # fallback: keep raw
+    return canon
+
+trip_df["activities_parsed"] = trip_df["activities"].apply(parse_and_canonicalize_activities)
+
+all_activities = sorted({a for acts in trip_df["activities_parsed"] for a in acts})
+activity_cols = [f"act__{a}" for a in all_activities]
+
+for a in all_activities:
+    col = f"act__{a}"
+    trip_df[col] = trip_df["activities_parsed"].apply(lambda acts: 1.0 if a in acts else 0.0)
 
 # Only use columns that exist
 categorical_cols = [c for c in categorical_cols if c in trip_df.columns]
@@ -56,7 +98,7 @@ categorical_cols = [c for c in categorical_cols if c in trip_df.columns]
 # intended numeric columns
 intended_numeric_cols = [
     "duration_days", "avg_temp_high", "avg_temp_low",
-    "rain_chance_percent", "humidity_percent"
+    "avg_precipitation_chance", "humidity_percent"
 ]
 
 # Filter to existing numeric columns
@@ -78,8 +120,10 @@ else:
 scaler = StandardScaler()
 scaled_nums = scaler.fit_transform(trip_df[numeric_cols])
 
-# Combine both feature sets
-X = np.concatenate([scaled_nums, encoded_cats], axis=1)
+# new:
+activity_matrix = trip_df[activity_cols].values.astype(np.float32)
+
+X = np.concatenate([scaled_nums, encoded_cats, activity_matrix], axis=1)
 
 
 # Multi-label encode items
@@ -154,8 +198,11 @@ for epoch in range(num_epochs):
 print("\nStarting evaluation...")
 model.eval()
 with torch.no_grad():
+
     preds = torch.sigmoid(model(X_test))
-    preds_binary = (preds > 0.65).float()
+    # preds_binary = (preds > 0.65).float()
+    for thresh in [0.3, 0.4, 0.5]:
+        preds_binary = (preds > thresh).float()
     accuracy = (preds_binary == Y_test).float().mean()
     print(f"\n Test Accuracy: {accuracy:.4f}")
 
