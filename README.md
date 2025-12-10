@@ -14,7 +14,7 @@ Activate virtual environment:\
 source .venv/bin/activate
 3. Delete files in /models directory. These will be regenerated. 
 4. Install dependencies:
-pip install -r requirements.txt 
+pip install -r src/requirements.txt 
 5. Train the model: Run train_trip_mlp.py
    6. The model will be trained on the data in the /data directory.
 6. Run the predict_items_script.py to use the model and test predictions. Adjust the example_trip used at the bottom of the script.
