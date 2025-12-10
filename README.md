@@ -5,26 +5,17 @@ It takes trip details (destination, season, duration, weather, activities, etc.)
 
 ---
 
-## 📂 Project Structure
-<img width="471" height="328" alt="image" src="https://github.com/user-attachments/assets/786233e8-d99e-4964-9df2-c24e79b9cd0c" />
+## ⚙️ Setup and running the model:
+1. Clone the repository:\
+git clone https://github.com/OliverMcMillen/480planit.git
+2. Configure virtual environment:\
+python -m venv .venv\
+Activate virtual environment:\
+source .venv/bin/activate
+3. Delete files in /models directory. These will be regenerated. 
+4. Install dependencies:
+pip install -r requirements.txt 
+5. Train the model: Run train_trip_mlp.py
+   6. The model will be trained on the data in the /data directory.
+6. Run the predict_items_script.py to use the model and test predictions. Adjust the example_trip used at the bottom of the script.
 
-
-
-## ⚙️ Setup:
-1. Clone the repository:
-git clone https://github.com/mouzhass/480planit.git
-
-2. Create a virtual environment:            
-<img width="289" height="72" alt="image" src="https://github.com/user-attachments/assets/d0834f61-2119-4fb8-8bb6-825b97ccfd39" />
-
-
-3. Install dependencies:
-pip install -r requirements.txt
-
-
-## 🏋️ Training the Model
-python src/train_trip_mlp.py
-
--Reads data/trip_scenarios.xlsx
-
--Trains a multilabel classifier (MLP)
